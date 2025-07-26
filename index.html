@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حاسبة فرق العمر</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Cairo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles to apply the Cairo font and other base settings */
+        body {
+            font-family: 'Cairo', sans-serif;
+            -webkit-tap-highlight-color: transparent; /* Removes blue highlight on mobile tap */
+        }
+        
+        /* Animated Gradient Background */
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animated-gradient {
+            background: linear-gradient(-45deg, #111827, #1f2937, #312e81, #4c1d95);
+            background-size: 400% 400%;
+            animation: gradient-animation 18s ease infinite;
+        }
+
+        /* Animation for the result panel */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-slide-in-up {
+            animation: slideInUp 0.5s ease-out forwards;
+        }
+        
+        /* Animation for the copy notification */
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; transform: translateY(10px); }
+            10%, 90% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-out {
+            animation: fadeInOut 3s ease-in-out forwards;
+        }
+
+        /* Styles for the custom dropdown selector */
+        .selector-popup {
+            position: absolute;
+            z-index: 10;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #1f2937; /* gray-800 */
+            border: 1px solid #4b5563; /* gray-600 */
+            border-radius: 0.5rem; /* rounded-lg */
+            margin-top: 0.5rem;
+            width: 100%;
+        }
+
+        .selector-item {
+            padding: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .selector-item:hover {
+            background-color: #374151; /* gray-700 */
+        }
+        
+        /* Custom scrollbar for dropdowns */
+        .selector-popup::-webkit-scrollbar {
+            width: 8px;
+        }
+        .selector-popup::-webkit-scrollbar-track {
+            background: #1f2937; /* gray-800 */
+        }
+        .selector-popup::-webkit-scrollbar-thumb {
+            background: #4b5563; /* gray-600 */
+            border-radius: 4px;
+        }
+        .selector-popup::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* gray-500 */
+        }
+    </style>
+</head>
+<body class="animated-gradient text-gray-200 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-md mx-auto">
+        <!-- Main container with glassmorphism effect -->
+        <div class="bg-gray-900 bg-opacity-40 backdrop-blur-xl p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-700/50">
+            
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl sm:text-4xl font-bold text-white">حاسبة فرق العمر</h1>
+                <p class="text-gray-400 mt-2">اكتشف الفرق بين عمرك وعمر صديقك بدقة</p>
+            </div>
+
+            <!-- Date Input Form -->
+            <div class="space-y-6">
+                <!-- Person 1: Your Birthday -->
+                <div>
+                    <label class="flex items-center text-lg font-bold mb-3 text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 ml-2 text-indigo-400"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        تاريخ ميلادك
+                    </label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <!-- Custom Year Selector -->
+                        <div class="relative">
+                            <div id="your-year" data-value="" class="p-3 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-lg text-center text-white cursor-pointer select-none h-full flex items-center justify-center">السنة</div>
+                            <div id="your-year-popup" class="selector-popup hidden"></div>
+                        </div>
+                        <!-- Custom Month Selector -->
+                        <div class="relative">
+                            <div id="your-month" data-value="" class="p-3 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-lg text-center text-white cursor-pointer select-none h-full flex items-center justify-center">الشهر</div>
+                            <div id="your-month-popup" class="selector-popup hidden"></div>
+                        </div>
+                        <!-- Custom Day Selector -->
+                        <div class="relative">
+                            <div id="your-day" data-value="" class="p-3 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-lg text-center text-white cursor-pointer select-none h-full flex items-center justify-center">اليوم</div>
+                            <div id="your-day-popup" class="selector-popup hidden"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Person 2: Friend's Birthday -->
+                <div>
+                    <label class="flex items-center text-lg font-bold mb-3 text-white">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 ml-2 text-purple-400"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        تاريخ ميلاد صديقك
+                    </label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <!-- Custom Year Selector -->
+                        <div class="relative">
+                            <div id="friend-year" data-value="" class="p-3 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-lg text-center text-white cursor-pointer select-none h-full flex items-center justify-center">السنة</div>
+                            <div id="friend-year-popup" class="selector-popup hidden"></div>
+                        </div>
+                        <!-- Custom Month Selector -->
+                        <div class="relative">
+                            <div id="friend-month" data-value="" class="p-3 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-lg text-center text-white cursor-pointer select-none h-full flex items-center justify-center">الشهر</div>
+                            <div id="friend-month-popup" class="selector-popup hidden"></div>
+                        </div>
+                        <!-- Custom Day Selector -->
+                        <div class="relative">
+                            <div id="friend-day" data-value="" class="p-3 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-lg text-center text-white cursor-pointer select-none h-full flex items-center justify-center">اليوم</div>
+                            <div id="friend-day-popup" class="selector-popup hidden"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculate Button -->
+            <div class="mt-8">
+                <button id="calculate-btn" class="w-full flex items-center justify-center p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-lg shadow-lg hover:scale-105 hover:shadow-xl hover:shadow-purple-500/30 transform transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 ml-2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M9 14l2 2 4-4"></path></svg>
+                    احسب الفرق
+                </button>
+            </div>
+
+            <!-- Result Display -->
+            <div id="result-container" class="mt-8 min-h-[100px]">
+                <!-- Result will be injected here by JavaScript -->
+            </div>
+            
+            <!-- Share Button -->
+             <div class="mt-6 text-center">
+                <button id="copy-link-btn" class="inline-flex items-center justify-center py-3 px-6 bg-gradient-to-r from-teal-500/80 to-cyan-500/80 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:shadow-cyan-500/40 hover:scale-105 transform transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-opacity-75">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 ml-2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
+                    نسخ الرابط للمشاركة
+                </button>
+            </div>
+
+            <!-- Blog Section -->
+            <div class="mt-8 pt-6 border-t border-gray-700/50 text-right text-gray-400 text-sm space-y-6">
+                <h2 class="text-2xl font-bold text-white mb-4 text-center">مقالات ومعلومات</h2>
+                
+                <div class="space-y-6">
+                    <!-- Article 1 -->
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-2">1. كيف تحسب الفرق بين عمرك وعمرك صديقك؟</h3>
+                        <p>عندما نريد معرفة الفرق بين أعمارنا وأعمار أصدقائنا، قد يكون الحساب بسيطًا أو يحتاج إلى دقة أكبر، خاصة عندما نريد معرفة الفرق بالأشهر والأسابيع والأيام.</p>
+                        <p class="mt-2">موقعنا "حاسبة فرق العمر" يساعدك على حساب الفرق بدقة باستخدام تاريخ الميلاد، بحيث تعرف الفرق بالتفصيل. فقط اختر تاريخ ميلادك وتاريخ ميلاد صديقك، واضغط على زر "احسب الفرق"، وستظهر لك النتيجة فورًا.</p>
+                    </div>
+                    
+                    <!-- Article 2 -->
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-2">2. أهمية الفارق العمري في العلاقات الاجتماعية</h3>
+                        <p>الفارق العمري بين الأشخاص يلعب دورًا مهمًا في نوعية العلاقات التي تجمعهم. أحيانًا قد يكون الاختلاف في العمر عاملًا إيجابيًا يزيد من نضج العلاقة والتفاهم، وأحيانًا قد يسبب تحديات بسبب اختلاف الاهتمامات أو المراحل الحياتية.</p>
+                        <p class="mt-2">لكن الأهم هو الاحترام والتفاهم، بغض النظر عن العمر.</p>
+                    </div>
+
+                    <!-- Article 3 -->
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-2">3. كيف يؤثر الفارق العمري على الصداقات؟</h3>
+                        <p>في بعض الأحيان، يكون الفارق العمري بين الأصدقاء كبيرًا، مما يؤدي إلى اختلاف في وجهات النظر وأسلوب الحياة. لكن يمكن للصداقة أن تستمر وتتطور إذا كان هناك تقبل ومرونة.</p>
+                        <p class="mt-2">معرفة الفرق بين الأعمار يساعدنا على فهم بعضنا بشكل أفضل واحترام اختلافاتنا.</p>
+                    </div>
+
+                    <!-- Article 4 -->
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-2">4. نصائح للحفاظ على الصداقة رغم اختلاف العمر</h3>
+                        <ul class="list-disc list-inside mt-2 space-y-1 pr-4">
+                            <li>تواصل دائم ومفتوح.</li>
+                            <li>تقبل اختلاف الاهتمامات والمواقف.</li>
+                            <li>الاحترام المتبادل وعدم الحكم على الآخر بسبب عمره.</li>
+                            <li>البحث عن نقاط مشتركة تجمعكم.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Article 5 -->
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-2">5. معلومات ممتعة عن الفروق بين الأجيال</h3>
+                        <p>كل جيل يأتي مع تجاربه وقيمه الخاصة، والفارق العمري يعكس أحيانًا اختلافات ثقافية أو اجتماعية.</p>
+                        <p class="mt-2">تعرف على أجيال مختلفة وتعلم كيف تتواصل معهم بشكل أفضل، واعتبر الفارق العمري فرصة لتوسيع آفاقك.</p>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Privacy, Terms, and Contact Section -->
+            <div class="mt-8 pt-6 border-t border-gray-700/50 text-right text-gray-400 text-sm space-y-6">
+                
+                <!-- Privacy Policy -->
+                <div>
+                    <h2 class="text-lg font-bold text-white mb-2">🛡️ سياسة الخصوصية</h2>
+                    <p>نحن في موقع "حاسبة فرق العمر" نحترم خصوصيتك ونتعامل مع بياناتك بأقصى درجات الحماية والحرص.</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1 pr-4">
+                        <li>لا نقوم بجمع أي معلومات شخصية مثل الاسم أو البريد الإلكتروني.</li>
+                        <li>لا نقوم بتخزين أو بيع أي بيانات للمستخدمين.</li>
+                        <li>يتم استخدام البيانات المدخلة فقط لغرض عرض نتيجة فرق العمر ولا يتم الاحتفاظ بها.</li>
+                    </ul>
+                    <p class="mt-2"><strong>استخدام أدوات الطرف الثالث:</strong> قد نستخدم أدوات خارجية مثل Google Analytics وGoogle AdSense للمساعدة في تحسين أداء الموقع وعرض الإعلانات. قد تقوم هذه الخدمات بجمع معلومات غير شخصية (مثل نوع الجهاز أو نوع المتصفح) بهدف تحسين التجربة الإعلانية.</p>
+                    <p class="mt-2"><strong>ملفات تعريف الارتباط (Cookies):</strong> يستخدم موقعنا ملفات تعريف الارتباط (Cookies) لتحسين تجربة المستخدم، وتخصيص المحتوى، وتحليل الأداء. باستخدامك الموقع، فإنك توافق على استخدامنا لتلك الملفات وفق سياسة الخصوصية هذه.</p>
+                </div>
+
+                <!-- Terms of Use -->
+                <div>
+                    <h2 class="text-lg font-bold text-white mb-2">📜 شروط الاستخدام</h2>
+                    <p>يُستخدم موقع "حاسبة فرق العمر" لغرض ترفيهي فقط.</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1 pr-4">
+                        <li>لا نضمن دقة النتائج بنسبة 100%، ويجب على المستخدم استخدامها كمعلومة تقريبية فقط.</li>
+                        <li>يمنع استخدام الموقع لأي غرض غير قانوني أو مسيء.</li>
+                        <li>نحتفظ بحق تعديل أو إيقاف أي جزء من الخدمة في أي وقت دون إشعار مسبق.</li>
+                        <li>باستخدامك الموقع، فإنك توافق على هذه الشروط.</li>
+                    </ul>
+                </div>
+
+                <!-- Contact Us -->
+                <div>
+                    <h2 class="text-lg font-bold text-white mb-2">📬 اتصل بنا</h2>
+                    <p>
+                        إذا كانت لديك أي استفسارات، اقتراحات، أو بلاغات تخص موقع "حاسبة فرق العمر"، يمكنك التواصل معنا عبر البريد التالي:
+                    </p>
+                    <p class="mt-2 text-left">
+                        <a href="mailto:gogo63852fuat@gmail.com" class="text-indigo-400 hover:underline">gogo63852fuat@gmail.com 📧</a>
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Copy Notification Toast -->
+    <div id="copy-toast" class="fixed bottom-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg opacity-0">
+        تم نسخ الرابط بنجاح!
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resultContainer = document.getElementById('result-container');
+        const copyLinkBtn = document.getElementById('copy-link-btn');
+        const copyToast = document.getElementById('copy-toast');
+
+        // --- Generic Custom Selector Logic ---
+        function setupSelector(triggerId, popupId, items) {
+            const trigger = document.getElementById(triggerId);
+            const popup = document.getElementById(popupId);
+
+            // Populate the popup with items
+            let itemsHtml = '';
+            items.forEach(item => {
+                 itemsHtml += `<div class="selector-item" data-value="${item}">${item}</div>`;
+            });
+            popup.innerHTML = itemsHtml;
+
+            // Show/Hide popup
+            trigger.addEventListener('click', (event) => {
+                event.stopPropagation();
+                // Hide all other popups before showing the current one
+                document.querySelectorAll('.selector-popup').forEach(p => {
+                    if (p.id !== popupId) {
+                        p.classList.add('hidden');
+                    }
+                });
+                popup.classList.toggle('hidden');
+            });
+
+            // Handle item selection
+            popup.addEventListener('click', (event) => {
+                if (event.target.classList.contains('selector-item')) {
+                    const selectedValue = event.target.dataset.value;
+                    trigger.dataset.value = selectedValue;
+                    trigger.textContent = selectedValue; // Update display
+                    popup.classList.add('hidden');
+                }
+            });
+        }
+        
+        // --- Prepare data for selectors ---
+        const days = Array.from({ length: 31 }, (_, i) => i + 1);
+        const months = Array.from({ length: 12 }, (_, i) => i + 1);
+        const currentYear = new Date().getFullYear();
+        const years = Array.from({ length: currentYear - 1919 }, (_, i) => currentYear - i);
+
+
+        // --- Initialize all selectors ---
+        setupSelector('your-year', 'your-year-popup', years);
+        setupSelector('your-month', 'your-month-popup', months);
+        setupSelector('your-day', 'your-day-popup', days);
+        
+        setupSelector('friend-year', 'friend-year-popup', years);
+        setupSelector('friend-month', 'friend-month-popup', months);
+        setupSelector('friend-day', 'friend-day-popup', days);
+
+        // Hide popups if clicked outside
+        window.addEventListener('click', () => {
+            document.querySelectorAll('.selector-popup').forEach(p => {
+                p.classList.add('hidden');
+            });
+        });
+
+
+        // --- Calculation Logic ---
+        calculateBtn.addEventListener('click', () => {
+            // Get values from custom selectors
+            const yourDate = {
+                y: parseInt(document.getElementById('your-year').dataset.value, 10),
+                m: parseInt(document.getElementById('your-month').dataset.value, 10),
+                d: parseInt(document.getElementById('your-day').dataset.value, 10),
+            };
+            const friendDate = {
+                y: parseInt(document.getElementById('friend-year').dataset.value, 10),
+                m: parseInt(document.getElementById('friend-month').dataset.value, 10),
+                d: parseInt(document.getElementById('friend-day').dataset.value, 10),
+            };
+
+            // Basic validation
+            if (isNaN(yourDate.y) || isNaN(yourDate.m) || isNaN(yourDate.d) || isNaN(friendDate.y) || isNaN(friendDate.m) || isNaN(friendDate.d)) {
+                displayResult('<p class="text-red-400 text-center">الرجاء إدخال جميع التواريخ بشكل صحيح.</p>');
+                return;
+            }
+
+            // Create Date objects (month is 0-indexed in JS)
+            const date1 = new Date(yourDate.y, yourDate.m - 1, yourDate.d);
+            const date2 = new Date(friendDate.y, friendDate.m - 1, friendDate.d);
+            
+            // Further validation to check if dates are real (e.g., not Feb 30)
+            if (date1.getFullYear() !== yourDate.y || date1.getMonth() + 1 !== yourDate.m || date1.getDate() !== yourDate.d ||
+                date2.getFullYear() !== friendDate.y || date2.getMonth() + 1 !== friendDate.m || date2.getDate() !== friendDate.d) {
+                displayResult('<p class="text-red-400 text-center">أحد التواريخ غير صالح. الرجاء التحقق من الأيام والأشهر.</p>');
+                return;
+            }
+
+            // Determine which date is earlier
+            let startDate = date1 < date2 ? date1 : date2;
+            let endDate = date1 >= date2 ? date1 : date2;
+            
+            const whoIsOlder = date1 < date2 ? 'أنت أكبر من صديقك' : 'صديقك أكبر منك';
+
+            if(date1.getTime() === date2.getTime()){
+                 displayResult('<p class="text-green-400 text-center font-bold text-lg">أنتم في نفس العمر تماماً!</p>');
+                 return;
+            }
+
+            // Calculate difference
+            let yearsDiff = endDate.getFullYear() - startDate.getFullYear();
+            let monthsDiff = endDate.getMonth() - startDate.getMonth();
+            let daysDiff = endDate.getDate() - startDate.getDate();
+
+            // Adjust for negative days
+            if (daysDiff < 0) {
+                monthsDiff--;
+                const lastDayOfPrevMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 0).getDate();
+                daysDiff += lastDayOfPrevMonth;
+            }
+
+            // Adjust for negative months
+            if (monthsDiff < 0) {
+                yearsDiff--;
+                monthsDiff += 12;
+            }
+            
+            // Break down days into weeks and remaining days
+            const weeks = Math.floor(daysDiff / 7);
+            const remainingDays = daysDiff % 7;
+
+            // Build the result string
+            let resultParts = [];
+            if (yearsDiff > 0) resultParts.push(`${yearsDiff} ${pluralize(yearsDiff, 'سنة', 'سنتان', 'سنوات')}`);
+            if (monthsDiff > 0) resultParts.push(`${monthsDiff} ${pluralize(monthsDiff, 'شهر', 'شهران', 'أشهر')}`);
+            if (weeks > 0) resultParts.push(`${weeks} ${pluralize(weeks, 'أسبوع', 'أسبوعان', 'أسابيع')}`);
+            if (remainingDays > 0) resultParts.push(`${remainingDays} ${pluralize(remainingDays, 'يوم', 'يومان', 'أيام')}`);
+
+            const resultString = resultParts.join(' و');
+            
+            const finalHtml = `
+                <div class="bg-gray-700 bg-opacity-50 p-4 rounded-lg text-center border border-gray-600 animate-slide-in-up">
+                    <p class="text-base text-gray-300 mb-2">${whoIsOlder}</p>
+                    <p class="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">${resultString}</p>
+                </div>
+            `;
+            
+            displayResult(finalHtml);
+        });
+        
+        // --- Helper for pluralization in Arabic ---
+        function pluralize(count, singular, dual, plural) {
+            if (count === 1) return singular;
+            if (count === 2) return dual;
+            return plural;
+        }
+
+        // --- Function to display the result with animation ---
+        function displayResult(html) {
+            resultContainer.innerHTML = html;
+        }
+
+        // --- Copy Link Logic ---
+        copyLinkBtn.addEventListener('click', () => {
+            const urlToCopy = window.location.href;
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(urlToCopy).then(() => {
+                    showCopyToast();
+                }).catch(err => {
+                    fallbackCopyTextToClipboard(urlToCopy);
+                });
+            } else {
+                fallbackCopyTextToClipboard(urlToCopy);
+            }
+        });
+        
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                if (document.execCommand('copy')) {
+                    showCopyToast();
+                }
+            } catch (err) {
+                console.error('Fallback: Unable to copy', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function showCopyToast() {
+            copyToast.classList.remove('animate-fade-in-out');
+            void copyToast.offsetWidth; 
+            copyToast.classList.add('animate-fade-in-out');
+        }
+
+    </script>
+
+</body>
+</html>
